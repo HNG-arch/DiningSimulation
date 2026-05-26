@@ -1,0 +1,1094 @@
+
+<template>
+  <div class="simulation-view">
+    <!-- 页面标题 -->
+    <div class="page-header">
+      <h1>
+        <span class="header-icon">⚙️</span>
+        仿真参数配置
+      </h1>
+      <p class="header-subtitle">配置仿真参数，模拟食堂运行情况</p>
+    </div>
+
+    <div class="simulation-container">
+      <!-- 左侧配置面板 -->
+      <div class="config-panel glass-effect">
+        <div class="panel-header">
+          <h2>
+            <span class="panel-icon">🔧</span>
+            参数设置
+          </h2>
+          <div class="preset-tags">
+            <span class="preset-tag" @click="loadPreset('breakfast')">🍳 早餐</span>
+            <span class="preset-tag" @click="loadPreset('lunch')">🍱 午餐</span>
+            <span class="preset-tag" @click="loadPreset('dinner')">🍽️ 晚餐</span>
+          </div>
+        </div>
+
+        <div class="config-form">
+          <!-- 窗口数量 -->
+          <div class="form-group">
+            <div class="label-with-icon">
+              <span class="input-icon">🏪</span>
+              <label>窗口数量</label>
+            </div>
+            <div class="slider-container">
+              <input
+                type="range"
+                v-model.number="config.windowCount"
+                min="2"
+                max="30"
+                class="slider"
+                :style="{ background: `linear-gradient(to right, #667eea 0%, #667eea ${(config.windowCount-2)/28*100}%, #e2e8f0 ${(config.windowCount-2)/28*100}%, #e2e8f0 100%)` }"
+              >
+              <span class="value-badge">{{ config.windowCount }}</span>
+            </div>
+            <div class="input-hint">推荐值: 8-12个窗口</div>
+          </div>
+
+          <!-- 桌子数量 -->
+          <div class="form-group">
+            <div class="label-with-icon">
+              <span class="input-icon">🪑</span>
+              <label>桌子数量</label>
+            </div>
+            <div class="slider-container">
+              <input
+                type="range"
+                v-model.number="config.tableCount"
+                min="10"
+                max="100"
+                class="slider"
+                :style="{ background: `linear-gradient(to right, #667eea 0%, #667eea ${(config.tableCount-10)/90*100}%, #e2e8f0 ${(config.tableCount-10)/90*100}%, #e2e8f0 100%)` }"
+              >
+              <span class="value-badge">{{ config.tableCount }}</span>
+            </div>
+            <div class="input-hint">总座位数: {{ config.tableCount * 4 }}个</div>
+          </div>
+
+          <!-- 打饭速度 -->
+          <div class="form-group">
+            <div class="label-with-icon">
+              <span class="input-icon">⚡</span>
+              <label>打饭速度 (分钟/人)</label>
+            </div>
+            <div class="slider-container">
+              <input
+                type="range"
+                v-model.number="config.servingSpeed"
+                min="0.5"
+                max="1"
+                step="0.1"
+                class="slider"
+                :style="{ background: `linear-gradient(to right, #667eea 0%, #667eea ${(config.servingSpeed-0.5)/0.5*100}%, #e2e8f0 ${(config.servingSpeed-0.5)/0.5*100}%, #e2e8f0 100%)` }"
+              >
+              <span class="value-badge">{{ config.servingSpeed.toFixed(1) }}</span>
+            </div>
+            <div class="input-hint">每个窗口服务一人所需时间</div>
+          </div>
+
+          <!-- 学生总数 -->
+          <div class="form-group">
+            <div class="label-with-icon">
+              <span class="input-icon">👥</span>
+              <label>学生总数</label>
+            </div>
+            <div class="slider-container">
+              <input
+                type="range"
+                v-model.number="config.studentCount"
+                min="200"
+                max="1000"
+                step="10"
+                class="slider"
+                :style="{ background: `linear-gradient(to right, #667eea 0%, #667eea ${(config.studentCount-200)/800*100}%, #e2e8f0 ${(config.studentCount-200)/800*100}%, #e2e8f0 100%)` }"
+              >
+              <span class="value-badge">{{ config.studentCount }}</span>
+            </div>
+          </div>
+
+          <!-- 仿真时间 -->
+          <div class="form-group">
+            <div class="label-with-icon">
+              <span class="input-icon">⏱️</span>
+              <label>仿真时间 (分钟)</label>
+            </div>
+            <div class="slider-container">
+              <input
+                type="range"
+                v-model.number="config.simulationTime"
+                min="60"
+                max="120"
+                step="10"
+                class="slider"
+                :style="{ background: `linear-gradient(to right, #667eea 0%, #667eea ${(config.simulationTime-60)/60*100}%, #e2e8f0 ${(config.simulationTime-60)/60*100}%, #e2e8f0 100%)` }"
+              >
+              <span class="value-badge">{{ config.simulationTime }}min</span>
+            </div>
+          </div>
+
+          <!-- 平均就餐时间 -->
+          <div class="form-group">
+            <div class="label-with-icon">
+              <span class="input-icon">🍽️</span>
+              <label>平均就餐时间 (分钟)</label>
+            </div>
+            <div class="slider-container">
+              <input
+                type="range"
+                v-model.number="config.avgEatTime"
+                min="5"
+                max="20"
+                step="1"
+                class="slider"
+                :style="{ background: `linear-gradient(to right, #667eea 0%, #667eea ${(config.avgEatTime-5)/15*100}%, #e2e8f0 ${(config.avgEatTime-5)/15*100}%, #e2e8f0 100%)` }"
+              >
+              <span class="value-badge">{{ config.avgEatTime }}min</span>
+            </div>
+            <div class="input-hint">学生完成一餐所需的平均时间</div>
+          </div>
+
+          <!-- 到达率 -->
+          <div class="form-group">
+            <div class="label-with-icon">
+              <span class="input-icon">📈</span>
+              <label>到达率 (人/分钟)</label>
+            </div>
+            <div class="slider-container">
+              <input
+                type="range"
+                v-model.number="config.arrivalRate"
+                min="5"
+                max="100"
+                step="1"
+                class="slider"
+                :style="{ background: `linear-gradient(to right, #667eea 0%, #667eea ${(config.arrivalRate-5)/95*100}%, #e2e8f0 ${(config.arrivalRate-5)/95*100}%, #e2e8f0 100%)` }"
+              >
+              <span class="value-badge">{{ config.arrivalRate.toFixed(1) }}</span>
+            </div>
+          </div>
+
+          <!-- 新增：仿真速率控制 -->
+          <div class="form-group highlight">
+            <div class="label-with-icon">
+              <span class="input-icon">⚡</span>
+              <label>仿真播放速度</label>
+            </div>
+            <div class="speed-control">
+              <span class="speed-label">慢</span>
+              <input
+                type="range"
+                v-model.number="simulationSpeed"
+                min="1"
+                max="10"
+                step="1"
+                class="slider speed-slider"
+                :style="{ background: `linear-gradient(to right, #48bb78 0%, #48bb78 ${(simulationSpeed-1)/9*100}%, #e2e8f0 ${(simulationSpeed-1)/9*100}%, #e2e8f0 100%)` }"
+              >
+              <span class="speed-label">快</span>
+              <span class="speed-value">{{ simulationSpeed }}x</span>
+            </div>
+            <div class="input-hint">控制仿真动画的播放速度</div>
+          </div>
+
+          <!-- 运行按钮 -->
+          <button
+            @click="runSimulation"
+            class="run-btn"
+            :disabled="running"
+          >
+            <span v-if="!running" class="btn-content">
+              <span class="btn-icon">▶️</span>
+              开始仿真
+            </span>
+            <span v-else class="btn-content">
+              <span class="spinner"></span>
+              仿真运行中...
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 右侧预览面板 -->
+      <div class="preview-panel glass-effect">
+        <h2>
+          <span class="panel-icon">👁️</span>
+          参数预览
+        </h2>
+
+        <!-- 参数卡片 -->
+        <div class="preview-cards">
+          <div class="preview-card" v-for="item in previewItems" :key="item.label">
+            <div class="card-icon">{{ item.icon }}</div>
+            <div class="card-content">
+              <div class="card-label">{{ item.label }}</div>
+              <div class="card-value">{{ item.value }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 新增：速度预览 -->
+        <div class="speed-preview">
+          <div class="speed-indicator">
+            <span class="speed-indicator-icon">🎬</span>
+            <span class="speed-indicator-label">播放速度:</span>
+            <span class="speed-indicator-value">{{ simulationSpeed }}x</span>
+          </div>
+          <div class="speed-description">
+            {{ getSpeedDescription }}
+          </div>
+        </div>
+
+        <!-- 容量警告 -->
+        <div class="capacity-warning" v-if="showWarning">
+          <div class="warning-icon">⚠️</div>
+          <div class="warning-text">
+            <strong>容量预警</strong>
+            <p>学生总数超过座位容量的2倍，可能会出现严重拥堵</p>
+          </div>
+        </div>
+
+        <!-- 负载预测 -->
+        <div class="load-prediction">
+          <h3>📊 负载预测</h3>
+          <div class="prediction-bars">
+            <div class="prediction-item">
+              <span class="prediction-label">窗口负载</span>
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: windowLoad + '%' }"></div>
+              </div>
+              <span class="prediction-value">{{ windowLoad }}%</span>
+            </div>
+            <div class="prediction-item">
+              <span class="prediction-label">座位占用</span>
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: seatLoad + '%' }"></div>
+              </div>
+              <span class="prediction-value">{{ seatLoad }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 最近仿真记录 -->
+        <div class="recent-simulations" v-if="recentResults.length > 0">
+          <h3>📋 最近仿真记录</h3>
+          <div class="results-list">
+            <div
+              v-for="result in recentResults"
+              :key="result.id"
+              class="result-item"
+            >
+              <div class="result-info" @click="viewResult(result.id)">
+                <span class="result-time">{{ formatTime(result.createdAt) }}</span>
+                <span class="result-id">#{{ result.id.slice(-6) }}</span>
+              </div>
+              <div class="result-actions">
+                <span class="view-link" @click="viewResult(result.id)">查看 →</span>
+                <button
+                  class="delete-btn"
+                  @click.stop="deleteResult(result.id)"
+                  title="删除记录"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+
+<script setup>
+import { ref, reactive, computed, onMounted } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const running = ref(false)
+const recentResults = ref([])
+const simulationSpeed = ref(5)
+const loadingConfig = ref(true)
+
+// 默认配置（兜底值，以用户界面习惯命名）
+const defaultConfig = {
+  windowCount: 10,
+  tableCount: 30,
+  servingSpeed: 1,
+  studentCount: 500,
+  simulationTime: 120,
+  arrivalRate: 15,
+  avgEatTime: 10
+}
+
+// 配置对象（使用用户界面习惯的命名）
+const config = reactive({ ...defaultConfig })
+
+// 从后端获取配置参数（仅获取推荐值，不影响用户修改）
+const fetchConfigFromBackend = async () => {
+  try {
+    loadingConfig.value = true
+    const response = await axios.get('http://127.0.0.1:8000/api/simulation/config')
+    const backendConfig = response.data
+
+    // 仅当用户配置还是默认值时，才使用后端配置
+    // 如果用户已经修改过，则保留用户的值
+    if (config.windowCount === defaultConfig.windowCount) {
+      config.windowCount = backendConfig.window_count ?? defaultConfig.windowCount
+    }
+    if (config.tableCount === defaultConfig.tableCount) {
+      config.tableCount = backendConfig.table_count ?? defaultConfig.tableCount
+    }
+    if (config.servingSpeed === defaultConfig.servingSpeed) {
+      config.servingSpeed = backendConfig.serving_speed ?? defaultConfig.servingSpeed
+    }
+    if (config.studentCount === defaultConfig.studentCount) {
+      config.studentCount = backendConfig.student_count ?? defaultConfig.studentCount
+    }
+    if (config.simulationTime === defaultConfig.simulationTime) {
+      config.simulationTime = backendConfig.simulation_duration ?? defaultConfig.simulationTime
+    }
+    if (config.arrivalRate === defaultConfig.arrivalRate) {
+      config.arrivalRate = backendConfig.arrival_rate ?? defaultConfig.arrivalRate
+    }
+    if (config.avgEatTime === defaultConfig.avgEatTime) {
+      // 后端 avg_eat_time 是秒，我们转成分钟
+      config.avgEatTime = (backendConfig.avg_eat_time ?? 600) / 60
+    }
+
+    console.log('从后端加载配置成功:', backendConfig)
+    console.log('当前用户配置:', config)
+
+  } catch (error) {
+    console.error('获取后端配置失败，使用默认配置:', error)
+  } finally {
+    loadingConfig.value = false
+  }
+}
+
+// 预览卡片数据
+const previewItems = computed(() => [
+  { icon: '🏪', label: '窗口数量', value: config.windowCount },
+  { icon: '🪑', label: '桌子数量', value: config.tableCount },
+  { icon: '💺', label: '总座位数', value: config.tableCount * 4 },
+  { icon: '👥', label: '学生总数', value: config.studentCount },
+  { icon: '⏱️', label: '仿真时长', value: config.simulationTime + '分钟' },
+  { icon: '🍽️', label: '平均就餐时间', value: config.avgEatTime + '分钟' },
+  { icon: '⚡', label: '到达率', value: config.arrivalRate.toFixed(1) + '/分钟' }
+])
+
+// 计算负载
+const windowLoad = computed(() => {
+  const maxCapacity = (config.windowCount / config.servingSpeed) * config.simulationTime
+  return Math.min(100, Math.round((config.studentCount / maxCapacity) * 100))
+})
+
+const seatLoad = computed(() => {
+  const totalSeats = config.tableCount * 4
+  return Math.min(100, Math.round((config.studentCount / (totalSeats * 2)) * 100))
+})
+
+const getSpeedDescription = computed(() => {
+  if (simulationSpeed.value <= 3) return '慢速播放，适合观察细节'
+  if (simulationSpeed.value <= 6) return '中速播放，平衡速度和观察'
+  return '快速播放，快速预览整体趋势'
+})
+
+const showWarning = computed(() => {
+  return config.studentCount > config.tableCount * 4 * 2
+})
+
+// 加载预设场景（使用用户配置的值）
+const loadPreset = async (scene) => {
+  try {
+    loadingConfig.value = true
+
+    if (scene === 'breakfast') {
+      // 早餐场景：低负载，吃得快
+      config.windowCount = 5
+      config.tableCount = 20
+      config.servingSpeed = 0.5
+      config.studentCount = 200
+      config.simulationTime = 120
+      config.arrivalRate = 10
+      config.avgEatTime = 5
+    } else if (scene === 'lunch') {
+      // 午餐场景：尝试从后端获取推荐配置
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/api/simulation/config/recommended')
+        const backendConfig = response.data
+        config.windowCount = Math.min(backendConfig.window_count ?? 15, 15)
+        config.tableCount = backendConfig.table_count ?? 50
+        config.servingSpeed = backendConfig.serving_speed ?? 1
+        config.studentCount = backendConfig.student_count ?? 1000
+        config.simulationTime = Math.min(backendConfig.simulation_duration ?? 120, 120)
+        config.arrivalRate = backendConfig.arrival_rate ?? 20
+        config.avgEatTime = (backendConfig.avg_eat_time ?? 600) / 60
+      } catch (error) {
+        console.error('获取推荐配置失败，使用前端默认午餐配置', error)
+        config.windowCount = 15
+        config.tableCount = 50
+        config.servingSpeed = 1
+        config.studentCount = 1000
+        config.simulationTime = 120
+        config.arrivalRate = 20
+        config.avgEatTime = 10
+      }
+    } else if (scene === 'dinner') {
+      config.windowCount = 15
+      config.tableCount = 40
+      config.servingSpeed = 1
+      config.studentCount = 800
+      config.simulationTime = 120
+      config.arrivalRate = 20
+      config.avgEatTime = 12
+    }
+
+  } catch (error) {
+    console.error('加载预设场景失败:', error)
+  } finally {
+    loadingConfig.value = false
+  }
+}
+
+// 运行仿真 - 使用异步流程: config + start, 然后跳转到食堂视图实时显示
+const runSimulation = async () => {
+  running.value = true
+
+  try {
+    // 将前端配置转换为后端需要的格式（时间单位：秒）
+    const avgServeTimeSeconds = config.servingSpeed * 60   // 分钟/人 → 秒
+    const avgEatTimeSeconds = config.avgEatTime * 60       // 从用户配置获取，分钟 → 秒
+
+    const requestData = {
+      window_count: config.windowCount,
+      seat_count: config.tableCount * 4,
+      arrival_rate: config.arrivalRate,
+      avg_serve_time: avgServeTimeSeconds,        // 秒
+      avg_eat_time: avgEatTimeSeconds,            // 秒（使用用户配置）
+      simulation_duration: config.simulationTime, // 分钟
+      tick_step: 1.0,                             // 步长1分钟
+      tick_delay: 1.5 / simulationSpeed.value,    // 实际延迟(秒)，更慢便于观察
+      student_count: config.studentCount,         // 学生总数上限
+      serve_time_std: null,
+      eat_time_std: null,
+      random_seed: null
+    }
+
+    console.log('发送配置到后端 (时间单位:秒, 步长:1分钟):', requestData)
+
+    // 步骤1: 配置仿真参数
+    const configResponse = await axios.post('http://127.0.0.1:8000/api/config', requestData)
+    if (!configResponse.data.success) {
+      throw new Error('配置失败: ' + (configResponse.data.message || '未知错误'))
+    }
+    console.log('配置成功:', configResponse.data)
+
+    // 步骤2: 启动仿真（后台线程运行）
+    const startResponse = await axios.post('http://127.0.0.1:8000/api/start')
+    if (!startResponse.data.success) {
+      throw new Error('启动失败: ' + (startResponse.data.message || '未知错误'))
+    }
+    console.log('仿真已启动:', startResponse.data)
+
+    // 将配置保存到 localStorage，供 CafeteriaView 使用
+    localStorage.setItem('simulationConfig', JSON.stringify({
+      windowCount: config.windowCount,
+      tableCount: config.tableCount,
+      servingSpeed: config.servingSpeed,
+      arrivalRate: config.arrivalRate,
+      studentCount: config.studentCount,
+      simulationDuration: config.simulationTime,
+      avgEatTime: config.avgEatTime,
+      tickStep: 1.0,
+      avgServeTime: avgServeTimeSeconds,
+      avgEatTimeSeconds: avgEatTimeSeconds
+    }))
+    localStorage.setItem('simulationSpeed', simulationSpeed.value.toString())
+
+    // 跳转到食堂视图，实时显示仿真过程
+    router.push({
+      path: '/',
+      query: {
+        running: 'true',
+        speed: simulationSpeed.value
+      }
+    })
+  } catch (error) {
+    console.error('仿真运行失败:', error)
+    alert('仿真运行失败: ' + (error.response?.data?.detail || error.message))
+  } finally {
+    running.value = false
+  }
+}
+
+// 获取最近仿真记录
+const fetchRecentResults = async () => {
+  try {
+    const response = await axios.get('http://127.0.0.1:8000/api/simulation/results')
+    recentResults.value = response.data.slice(0, 5)
+  } catch (error) {
+    console.error('获取仿真记录失败:', error)
+  }
+}
+
+const deleteResult = async (id) => {
+  if (!confirm('确定要删除这条仿真记录吗？')) {
+    return
+  }
+
+  try {
+    await axios.delete(`http://127.0.0.1:8000/api/simulation/results/${id}`)
+    await fetchRecentResults()
+    recentResults.value = recentResults.value.filter(r => r.id !== id)
+    console.log('删除成功')
+  } catch (error) {
+    console.error('删除失败:', error)
+    alert('删除失败: ' + (error.response?.data?.detail || error.message))
+    await fetchRecentResults()
+  }
+}
+
+const viewResult = (id) => {
+  router.push({
+    path: '/analysis',
+    query: { simulationId: id }
+  })
+}
+
+const formatTime = (timestamp) => {
+  const date = new Date(timestamp)
+  return `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+// 初始化
+onMounted(() => {
+  fetchConfigFromBackend()  // 从后端获取推荐配置作为初始值
+  fetchRecentResults()      // 获取历史记录
+})
+</script>
+
+<style scoped>
+/* 添加新的样式 */
+.highlight {
+  background: linear-gradient(135deg, #f0fff4 0%, #e6fffa 100%);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #9ae6b4;
+  margin: 10px 0;
+}
+
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.speed-label {
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.speed-slider {
+  flex: 1;
+}
+
+.speed-slider::-webkit-slider-thumb {
+  background: #48bb78;
+  border-color: #48bb78;
+}
+
+.speed-value {
+  min-width: 45px;
+  text-align: center;
+  padding: 4px 8px;
+  background: #48bb78;
+  color: white;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.speed-preview {
+  background: linear-gradient(135deg, #f0fff4 0%, #e6fffa 100%);
+  padding: 15px;
+  border-radius: 12px;
+  margin: 15px 0;
+  border: 1px solid #9ae6b4;
+}
+
+.speed-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.speed-indicator-icon {
+  font-size: 1.2rem;
+}
+
+.speed-indicator-label {
+  color: #276749;
+  font-weight: 500;
+}
+
+.speed-indicator-value {
+  background: #276749;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.speed-description {
+  color: #276749;
+  font-size: 0.9rem;
+  padding-left: 30px;
+}
+
+/* 其他样式保持不变 */
+.simulation-view {
+  min-height: calc(100vh - 70px);
+  padding: 30px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.page-header h1 {
+  font-size: 2.5rem;
+  color: white;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.header-icon {
+  font-size: 3rem;
+}
+
+.header-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1rem;
+}
+
+.simulation-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 30px;
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.config-panel {
+  padding: 30px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.panel-header h2, .preview-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.5rem;
+  color: #2d3748;
+}
+
+.panel-icon {
+  font-size: 1.8rem;
+}
+
+.preset-tags {
+  display: flex;
+  gap: 10px;
+}
+
+.preset-tag {
+  padding: 8px 16px;
+  background: #f7fafc;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: #4a5568;
+}
+
+.preset-tag:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.label-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-icon {
+  font-size: 1.2rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 1rem;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.slider {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
+  border: 2px solid #667eea;
+  transition: transform 0.2s;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.value-badge {
+  min-width: 60px;
+  text-align: center;
+  padding: 6px 12px;
+  background: #f7fafc;
+  border-radius: 50px;
+  font-weight: 600;
+  color: #667eea;
+  font-size: 0.9rem;
+  border: 1px solid #e2e8f0;
+}
+
+.input-hint {
+  font-size: 0.85rem;
+  color: #a0aec0;
+  margin-left: 30px;
+}
+
+.run-btn {
+  margin-top: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.run-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 30px rgba(102, 126, 234, 0.4);
+}
+
+.run-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-icon {
+  font-size: 1.3rem;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.preview-panel {
+  padding: 30px;
+}
+
+.preview-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin: 25px 0;
+}
+
+.preview-card {
+  background: #f7fafc;
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.2s;
+  border: 1px solid #e2e8f0;
+}
+
+.preview-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card-icon {
+  font-size: 1.8rem;
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-label {
+  font-size: 0.8rem;
+  color: #a0aec0;
+}
+
+.card-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.capacity-warning {
+  background: #feebc8;
+  border-left: 4px solid #ed8936;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px 0;
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.warning-icon {
+  font-size: 1.5rem;
+}
+
+.warning-text {
+  flex: 1;
+}
+
+.warning-text strong {
+  color: #c05621;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.warning-text p {
+  color: #7b341e;
+  font-size: 0.9rem;
+}
+
+.load-prediction {
+  background: #f7fafc;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+.load-prediction h3 {
+  color: #2d3748;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.prediction-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.prediction-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.prediction-label {
+  width: 80px;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.prediction-value {
+  width: 45px;
+  text-align: right;
+  color: #667eea;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.recent-simulations {
+  margin-top: 30px;
+}
+
+.recent-simulations h3 {
+  color: #2d3748;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #f7fafc;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid #e2e8f0;
+}
+
+.result-item:hover {
+  background: white;
+  border-color: #667eea;
+  transform: translateX(5px);
+}
+
+.result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.result-time {
+  font-size: 0.85rem;
+  color: #a0aec0;
+}
+
+.result-id {
+  font-weight: 600;
+  color: #2d3748;
+  font-family: monospace;
+}
+
+.view-link {
+  color: #667eea;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.result-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.view-link:hover {
+  color: #5a67d8;
+  text-decoration: underline;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-btn:hover {
+  opacity: 1;
+  background-color: #fed7d7;
+  transform: scale(1.1);
+}
+
+.delete-btn:active {
+  transform: scale(0.95);
+}
+</style>
+SimulationView.vue
+目前显示的是“SimulationView.vue”。
