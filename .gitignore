@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# JetBrains / PyCharm (project files)
+.idea/
+*.iml
+
+# Frontend (Vite/Vue)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Local databases / runtime artifacts (optional)
+# simulation_history.db
