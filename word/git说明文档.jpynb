@@ -1,0 +1,159 @@
+下面我按你们**3 人团队（前端 / 后端 / 数据分析）**的情况，把 Git 常用命令、每条命令在项目协作里的意义、以及“分开开发—最后集成”的流程，整理成一套你可以直接发群里的规范。
+
+---
+
+## 1) Git 常用方法 + 对应意义（按团队协作场景）
+
+### 1.1 三个核心概念（理解后命令就不乱）
+- **工作区（Working tree）**：你电脑上的文件
+- **暂存区（Stage / Index）**：准备提交的“快照清单”
+- **提交（Commit）**：一次保存点（带说明、可回滚、可对比）
+
+对应命令：
+- `git status`：看工作区/暂存区/分支状态（最常用）
+- `git add <path>`：把改动放入暂存区（准备提交）
+- `git commit -m "..."`：生成一次提交（保存点）
+
+---
+
+### 1.2 最常用命令清单（你们日常 90% 用到这些）
+
+#### 查看类
+- `git status`：你现在改了什么、有没有暂存、能不能提交
+- `git log --oneline --decorate -10`：最近提交历史
+- `git diff`：工作区 vs 暂存区/上次提交差异  
+  - `git diff`：未暂存的改动
+  - `git diff --staged`：已暂存但未提交的改动
+
+#### 提交类
+- `git add .`：把当前目录所有改动加入暂存区（新手常用，但要注意别把生成物加进去）
+- `git add backend/app/main.py`：只暂存某个文件（更推荐）
+- `git commit -m "feat: xxx"`：提交（建议小步提交）
+
+#### 分支类（协作关键）
+- `git branch`：看有哪些分支
+- `git checkout -b feature/xxx`：新建并切换到功能分支
+- `git checkout dev`：切回集成分支
+- `git merge feature/xxx`：合并分支（一般用 PR 来做，少在本地手动 merge）
+
+#### 同步类（避免冲突关键）
+- `git pull origin dev`：拉取远程 dev 的更新（= fetch + merge）
+- 推荐用 `rebase` 同步，历史更干净：  
+  - `git fetch origin`
+  - `git rebase origin/dev`
+
+#### 推送类
+- `git push -u origin feature/xxx`：第一次推送该分支并建立跟踪关系
+- `git push`：后续推送（默认推到跟踪的远程分支）
+
+---
+
+## 2) 三人团队如何分开协作、最后集成（可落地流程）
+
+我建议你们采用：**`main + dev + feature/*`**
+
+- `main`：最终交付/答辩演示稳定版本（保护分支，不允许直接 push）
+- `dev`：集成分支（大家 PR 合并到这里）
+- `feature/*`：每个人的开发分支（各自开发，不互相打扰）
+
+### 2.1 你（组长）先做一次初始化（建议）
+1) 创建 dev 分支并推送：
+```powershell
+git checkout -b dev
+git push -u origin dev
+git checkout main
+```
+
+2) GitHub 上保护 `main`：必须 PR + 至少 1 个审批
+
+---
+
+### 2.2 每个人的开发流程（固定步骤）
+以“前端同学”为例，后端/数据分析同理：
+
+1) 同步最新 dev：
+```powershell
+git checkout dev
+git pull origin dev
+```
+
+2) 开功能分支：
+```powershell
+git checkout -b feature/frontend-ui
+```
+
+3) 开发 → 小步提交：
+```powershell
+git add frontend/src/components/SimulationView.vue
+git commit -m "feat: improve simulation config UI"
+```
+
+4) 推送分支：
+```powershell
+git push -u origin feature/frontend-ui
+```
+
+5) 去 GitHub 提 PR：`feature/frontend-ui` → `dev`
+- 写 Summary、Test Plan
+- 指定组长 review
+
+---
+
+### 2.3 如何最后集成到 main（组长做）
+当 `dev` 上功能都集成完成、能跑通后：
+
+- 发 PR：`dev` → `main`
+- 在 PR 里做最终验收（能启动后端、前端能访问、关键流程可演示）
+- 合并后 `main` 就是最终交付版本
+
+---
+
+## 3) 你们三人分工建议（对应你项目目录）
+
+### 前端同学（Vue）
+重点目录：
+- `frontend/src/components/SimulationView.vue`
+- `frontend/src/components/CafeteriaView.vue`
+- `frontend/src/components/AnalysisView.vue`
+- `frontend/src/router/index.js`
+
+建议分支：
+- `feature/frontend-ui`
+- 或拆更细：`feature/frontend-simulation-view` / `feature/frontend-analysis-view`
+
+---
+
+### 后端同学（FastAPI + 仿真）
+重点目录：
+- `backend/app/main.py`（API 路由）
+- `backend/app/core/simulation.py`（仿真引擎）
+- `backend/app/core/models.py`（数据模型与成本）
+- `backend/app/core/analysis.py`（分析/ML）
+
+建议分支：
+- `feature/backend-api`
+- `feature/backend-simulation`
+
+---
+
+### 数据分析同学（脚本/ML/可解释）
+重点目录：
+- `analysis_data/analyze_results.py`
+- `analysis_data/validate_model.py`
+- `backend/app/core/analysis.py`（如果要把分析能力接进 API）
+
+建议分支：
+- `feature/analysis-ml`
+
+---
+
+## 4) 组内“最小规范”（建议你发群里）
+1) 不允许直接 push `main`
+2) 每人只在自己 `feature/*` 分支开发
+3) 合并只能通过 PR 到 `dev`
+4) 每次提交前先 `git status`，确认没把生成物加进去
+5) commit message 用：`feat/fix/refactor/docs/test/chore: ...`
+
+---
+
+如果你愿意，我可以根据你们**这次作业要展示的重点**（更偏前端演示、仿真准确、还是 ML 分析），给你们三人列一个“任务清单 + 每个任务验收标准 + 建议 PR 顺序”。你们答辩更看重哪一块？（前端效果 / 仿真逻辑 / 分析优化）

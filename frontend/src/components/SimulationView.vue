@@ -12,16 +12,36 @@
 
     <div class="simulation-container">
       <!-- 左侧配置面板 -->
-      <div class="config-panel glass-effect">
+      <div class="config-panel">
         <div class="panel-header">
           <h2>
             <span class="panel-icon">🔧</span>
             参数设置
           </h2>
-          <div class="preset-tags">
-            <span class="preset-tag" @click="loadPreset('breakfast')">🍳 早餐</span>
-            <span class="preset-tag" @click="loadPreset('lunch')">🍱 午餐</span>
-            <span class="preset-tag" @click="loadPreset('dinner')">🍽️ 晚餐</span>
+        </div>
+
+        <!-- 预设场景卡片 -->
+        <div class="preset-cards">
+          <div class="preset-card" :class="{ active: activePreset === 'breakfast' }" @click="loadPreset('breakfast')">
+            <div class="preset-emoji">🍳</div>
+            <div class="preset-info">
+              <div class="preset-name">早餐场景</div>
+              <div class="preset-desc">5窗口 · 20桌 · 200人 · 快食</div>
+            </div>
+          </div>
+          <div class="preset-card" :class="{ active: activePreset === 'lunch' }" @click="loadPreset('lunch')">
+            <div class="preset-emoji">🍱</div>
+            <div class="preset-info">
+              <div class="preset-name">午餐场景</div>
+              <div class="preset-desc">15窗口 · 50桌 · 1000人 · 高峰</div>
+            </div>
+          </div>
+          <div class="preset-card" :class="{ active: activePreset === 'dinner' }" @click="loadPreset('dinner')">
+            <div class="preset-emoji">🍽️</div>
+            <div class="preset-info">
+              <div class="preset-name">晚餐场景</div>
+              <div class="preset-desc">15窗口 · 40桌 · 800人 · 中峰</div>
+            </div>
           </div>
         </div>
 
@@ -137,11 +157,11 @@
               <input
                 type="range"
                 v-model.number="config.avgEatTime"
-                min="5"
-                max="20"
+                min="10"
+                max="30"
                 step="1"
                 class="slider"
-                :style="{ background: `linear-gradient(to right, #667eea 0%, #667eea ${(config.avgEatTime-5)/15*100}%, #e2e8f0 ${(config.avgEatTime-5)/15*100}%, #e2e8f0 100%)` }"
+                :style="{ background: `linear-gradient(to right, #667eea 0%, #667eea ${(config.avgEatTime-10)/20*100}%, #e2e8f0 ${(config.avgEatTime-10)/20*100}%, #e2e8f0 100%)` }"
               >
               <span class="value-badge">{{ config.avgEatTime }}min</span>
             </div>
@@ -210,7 +230,7 @@
       </div>
 
       <!-- 右侧预览面板 -->
-      <div class="preview-panel glass-effect">
+      <div class="preview-panel">
         <h2>
           <span class="panel-icon">👁️</span>
           参数预览
@@ -269,6 +289,46 @@
           </div>
         </div>
 
+        <!-- 食堂布局预览 -->
+        <div class="layout-preview">
+          <h3>食堂布局预览</h3>
+          <div class="mini-layout">
+            <div class="mini-entry">入口</div>
+            <div class="mini-arrow">↓</div>
+            <div class="mini-windows">
+              <div
+                v-for="i in Math.min(config.windowCount, 15)"
+                :key="'w'+i"
+                class="mini-win"
+              ></div>
+              <span v-if="config.windowCount > 15" class="mini-more">+{{ config.windowCount - 15 }}</span>
+            </div>
+            <div class="mini-arrow">↓</div>
+            <div class="mini-tables">
+              <div
+                v-for="i in Math.min(config.tableCount, 30)"
+                :key="'t'+i"
+                class="mini-table"
+              ></div>
+              <span v-if="config.tableCount > 30" class="mini-more">+{{ config.tableCount - 30 }}桌</span>
+            </div>
+            <div class="mini-arrow">↓</div>
+            <div class="mini-exit">出口</div>
+          </div>
+          <div class="layout-stats">
+            <span>{{ config.windowCount }}窗口</span>
+            <span>{{ config.tableCount * 4 }}座位</span>
+          </div>
+        </div>
+
+        <!-- 参数提示 -->
+        <div class="param-tips" v-if="paramTips.length > 0">
+          <div class="tip-item" v-for="(tip, i) in paramTips" :key="i" :class="tip.level">
+            <span class="tip-icon">{{ tip.icon }}</span>
+            <span>{{ tip.text }}</span>
+          </div>
+        </div>
+
         <!-- 最近仿真记录 -->
         <div class="recent-simulations" v-if="recentResults.length > 0">
           <h3>📋 最近仿真记录</h3>
@@ -305,64 +365,48 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import { useSimulationStore } from '../stores/simulation.js'
 
 const router = useRouter()
+const store = useSimulationStore()
+
+// 本地表单配置（用户编辑的，不绑定 store reactive）
+const config = reactive({
+  windowCount: store.config.windowCount,
+  tableCount: store.config.tableCount,
+  servingSpeed: store.config.servingSpeed,
+  studentCount: store.config.studentCount,
+  simulationTime: store.config.simulationTime,
+  arrivalRate: store.config.arrivalRate,
+  avgEatTime: store.config.avgEatTime
+})
+
+// simulationSpeed 本地维护
+const simulationSpeed = ref(store.simulationSpeed)
+
 const running = ref(false)
 const recentResults = ref([])
-const simulationSpeed = ref(5)
 const loadingConfig = ref(true)
+const activePreset = ref('')
 
-// 默认配置（兜底值，以用户界面习惯命名）
-const defaultConfig = {
-  windowCount: 10,
-  tableCount: 30,
-  servingSpeed: 1,
-  studentCount: 500,
-  simulationTime: 120,
-  arrivalRate: 15,
-  avgEatTime: 10
-}
+// 配置使用 Pinia store 中的 config，不再本地维护
 
-// 配置对象（使用用户界面习惯的命名）
-const config = reactive({ ...defaultConfig })
-
-// 从后端获取配置参数（仅获取推荐值，不影响用户修改）
+// 从后端获取推荐配置作为初始值
 const fetchConfigFromBackend = async () => {
   try {
     loadingConfig.value = true
     const response = await axios.get('http://127.0.0.1:8000/api/simulation/config')
-    const backendConfig = response.data
-
-    // 仅当用户配置还是默认值时，才使用后端配置
-    // 如果用户已经修改过，则保留用户的值
-    if (config.windowCount === defaultConfig.windowCount) {
-      config.windowCount = backendConfig.window_count ?? defaultConfig.windowCount
-    }
-    if (config.tableCount === defaultConfig.tableCount) {
-      config.tableCount = backendConfig.table_count ?? defaultConfig.tableCount
-    }
-    if (config.servingSpeed === defaultConfig.servingSpeed) {
-      config.servingSpeed = backendConfig.serving_speed ?? defaultConfig.servingSpeed
-    }
-    if (config.studentCount === defaultConfig.studentCount) {
-      config.studentCount = backendConfig.student_count ?? defaultConfig.studentCount
-    }
-    if (config.simulationTime === defaultConfig.simulationTime) {
-      config.simulationTime = backendConfig.simulation_duration ?? defaultConfig.simulationTime
-    }
-    if (config.arrivalRate === defaultConfig.arrivalRate) {
-      config.arrivalRate = backendConfig.arrival_rate ?? defaultConfig.arrivalRate
-    }
-    if (config.avgEatTime === defaultConfig.avgEatTime) {
-      // 后端 avg_eat_time 是秒，我们转成分钟
-      config.avgEatTime = (backendConfig.avg_eat_time ?? 600) / 60
-    }
-
-    console.log('从后端加载配置成功:', backendConfig)
-    console.log('当前用户配置:', config)
-
+    const bc = response.data
+    config.windowCount = bc.window_count ?? 10
+    config.tableCount = bc.table_count ?? 30
+    config.servingSpeed = bc.serving_speed ?? 1
+    config.studentCount = bc.student_count ?? 500
+    config.simulationTime = bc.simulation_duration ?? 120
+    config.arrivalRate = bc.arrival_rate ?? 15
+    config.avgEatTime = (bc.avg_eat_time ?? 600) / 60
+    console.log('从后端加载配置成功')
   } catch (error) {
-    console.error('获取后端配置失败，使用默认配置:', error)
+    console.error('获取后端配置失败，使用 store 默认配置:', error)
   } finally {
     loadingConfig.value = false
   }
@@ -400,11 +444,30 @@ const showWarning = computed(() => {
   return config.studentCount > config.tableCount * 4 * 2
 })
 
+const paramTips = computed(() => {
+  const tips = []
+  const totalSeats = config.tableCount * 4
+  if (totalSeats < config.windowCount * 5) {
+    tips.push({ icon: '🪑', text: '座位数相对窗口偏少，可能导致等座拥堵', level: 'warn' })
+  }
+  if (config.windowCount < 6 && config.studentCount > 500) {
+    tips.push({ icon: '🏪', text: '窗口数偏少，高峰期可能出现严重排队', level: 'warn' })
+  }
+  if (config.windowCount > 20) {
+    tips.push({ icon: '💰', text: '窗口数量较多，运营成本偏高', level: 'info' })
+  }
+  if (config.studentCount > totalSeats * 3) {
+    tips.push({ icon: '⚠️', text: '学生数远超座位容量，需扩大座位区', level: 'danger' })
+  }
+  return tips
+})
+
 // 加载预设场景（使用用户配置的值）
 const loadPreset = async (scene) => {
   try {
     loadingConfig.value = true
 
+    activePreset.value = scene
     if (scene === 'breakfast') {
       // 早餐场景：低负载，吃得快
       config.windowCount = 5
@@ -413,7 +476,7 @@ const loadPreset = async (scene) => {
       config.studentCount = 200
       config.simulationTime = 120
       config.arrivalRate = 10
-      config.avgEatTime = 5
+      config.avgEatTime = 10
     } else if (scene === 'lunch') {
       // 午餐场景：尝试从后端获取推荐配置
       try {
@@ -493,8 +556,8 @@ const runSimulation = async () => {
     }
     console.log('仿真已启动:', startResponse.data)
 
-    // 将配置保存到 localStorage，供 CafeteriaView 使用
-    localStorage.setItem('simulationConfig', JSON.stringify({
+    // 将配置保存到 Pinia store，供 CafeteriaView 使用
+    store.setConfig({
       windowCount: config.windowCount,
       tableCount: config.tableCount,
       servingSpeed: config.servingSpeed,
@@ -503,10 +566,10 @@ const runSimulation = async () => {
       simulationDuration: config.simulationTime,
       avgEatTime: config.avgEatTime,
       tickStep: 1.0,
-      avgServeTime: avgServeTimeSeconds,
+      avgServeTimeSeconds: avgServeTimeSeconds,
       avgEatTimeSeconds: avgEatTimeSeconds
-    }))
-    localStorage.setItem('simulationSpeed', simulationSpeed.value.toString())
+    })
+    store.simulationSpeed = simulationSpeed.value
 
     // 跳转到食堂视图，实时显示仿真过程
     router.push({
@@ -654,31 +717,31 @@ onMounted(() => {
 .simulation-view {
   min-height: calc(100vh - 70px);
   padding: 30px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f0f2f5;
 }
 
 .page-header {
-  text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .page-header h1 {
-  font-size: 2.5rem;
-  color: white;
-  margin-bottom: 10px;
+  font-size: 1.4rem;
+  color: #1a1a1a;
+  margin-bottom: 4px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 15px;
+  gap: 10px;
 }
 
 .header-icon {
-  font-size: 3rem;
+  font-size: 1.4rem;
 }
 
 .header-subtitle {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1.1rem;
+  color: #8c8c8c;
+  font-size: 0.85rem;
 }
 
 .simulation-container {
@@ -689,15 +752,11 @@ onMounted(() => {
   gap: 30px;
 }
 
-.glass-effect {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-}
-
 .config-panel {
   padding: 30px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .panel-header {
@@ -719,27 +778,137 @@ onMounted(() => {
   font-size: 1.8rem;
 }
 
-.preset-tags {
+/* 预设场景卡片 */
+.preset-cards {
   display: flex;
   gap: 10px;
+  margin-bottom: 24px;
 }
 
-.preset-tag {
-  padding: 8px 16px;
+.preset-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
   background: #f7fafc;
-  border-radius: 50px;
-  font-size: 0.9rem;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.3s;
-  color: #4a5568;
+  transition: all 0.2s;
 }
 
-.preset-tag:hover {
-  background: #667eea;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+.preset-card:hover {
+  border-color: #667eea;
+  background: #f5f3ff;
 }
+
+.preset-card.active {
+  border-color: #667eea;
+  background: #f5f3ff;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.15);
+}
+
+.preset-emoji { font-size: 1.6rem; flex-shrink: 0; }
+.preset-info { min-width: 0; }
+.preset-name { font-size: 0.85rem; font-weight: 600; color: #1a1a1a; }
+.preset-desc { font-size: 0.7rem; color: #8c8c8c; margin-top: 2px; }
+
+/* 食堂布局预览 */
+.layout-preview {
+  margin: 15px 0;
+  padding: 15px;
+  background: #fafafa;
+  border-radius: 10px;
+}
+
+.layout-preview h3 {
+  font-size: 0.9rem;
+  color: #595959;
+  margin-bottom: 10px;
+}
+
+.mini-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.mini-entry, .mini-exit {
+  font-size: 0.7rem;
+  color: #8c8c8c;
+  padding: 3px 16px;
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.mini-arrow { font-size: 0.65rem; color: #bfbfbf; }
+
+.mini-windows {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.mini-win {
+  width: 14px;
+  height: 18px;
+  background: #e6e6ff;
+  border: 1px solid #b8b8e8;
+  border-radius: 2px;
+}
+
+.mini-tables {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.mini-table {
+  width: 12px;
+  height: 12px;
+  background: #e8f5e9;
+  border: 1px solid #b8d4b8;
+  border-radius: 2px;
+}
+
+.mini-more { font-size: 0.65rem; color: #bfbfbf; }
+
+.layout-stats {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 0.7rem;
+  color: #8c8c8c;
+}
+
+/* 参数提示 */
+.param-tips {
+  margin: 15px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tip-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: #595959;
+}
+.tip-item.warn { background: #fffbe6; border-left: 3px solid #faad14; }
+.tip-item.info { background: #e6f7ff; border-left: 3px solid #1890ff; }
+.tip-item.danger { background: #fff1f0; border-left: 3px solid #f5222d; }
+.tip-icon { font-size: 0.85rem; flex-shrink: 0; }
 
 .config-form {
   display: flex;
@@ -868,6 +1037,9 @@ onMounted(() => {
 
 .preview-panel {
   padding: 30px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .preview-cards {

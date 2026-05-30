@@ -242,6 +242,7 @@ class SimulationEngine:
             "total_completed": self.completed_students,
             "eating_count": eating_count,
             "total_queue": total_queue,
+            "waiting_seat": len(self.waiting_for_seat),
             "windows": [
                 {
                     "window_id": w.window_id,

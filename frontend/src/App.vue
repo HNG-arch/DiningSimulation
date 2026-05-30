@@ -1,83 +1,108 @@
 <template>
   <div class="app">
     <nav class="navbar">
-      <router-link to="/" class="nav-link" :class="{ active: $route.path === '/' }">
-        <span class="nav-icon">🍽️</span>
-        食堂场景
-      </router-link>
-      <router-link to="/simulation" class="nav-link" :class="{ active: $route.path === '/simulation' }">
-        <span class="nav-icon">⚙️</span>
-        运行仿真
-      </router-link>
-      <router-link to="/analysis" class="nav-link" :class="{ active: $route.path === '/analysis' }">
-        <span class="nav-icon">📊</span>
-        决策分析
-      </router-link>
+      <div class="nav-brand">
+        <div class="brand-mark">仿</div>
+        <span class="brand-name">BJTU 食堂仿真系统</span>
+      </div>
+      <div class="nav-links">
+        <router-link to="/" class="nav-link" :class="{ active: $route.path === '/' }">
+          食堂场景
+        </router-link>
+        <router-link to="/simulation" class="nav-link" :class="{ active: $route.path === '/simulation' }">
+          运行仿真
+        </router-link>
+        <router-link to="/analysis" class="nav-link" :class="{ active: $route.path === '/analysis' }">
+          决策分析
+        </router-link>
+      </div>
     </nav>
-
     <router-view />
   </div>
 </template>
 
 <script setup>
-// App.vue 只是作为路由容器
 </script>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+* { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #F8FAFC;
   min-height: 100vh;
+  color: #0F172A;
 }
-
-.app {
-  min-height: 100vh;
-}
+.app { min-height: 100vh; display: flex; flex-direction: column; }
 
 .navbar {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid #E2E8F0;
+  padding: 0 28px;
   display: flex;
-  gap: 1rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  align-items: center;
+  justify-content: space-between;
+  height: 54px;
   position: sticky;
   top: 0;
   z-index: 1000;
 }
 
-.nav-link {
-  color: #4a5568;
-  text-decoration: none;
-  font-size: 1.1rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 50px;
-  transition: all 0.3s ease;
+.nav-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+}
+
+.brand-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0F172A;
+  letter-spacing: -0.2px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nav-link {
+  color: #64748B;
+  text-decoration: none;
+  font-size: 0.865rem;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
   font-weight: 500;
 }
 
 .nav-link:hover {
-  background: #f7fafc;
-  color: #4299e1;
-  transform: translateY(-2px);
+  color: #4F46E5;
+  background: #EEF2FF;
 }
 
 .nav-link.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-}
-
-.nav-icon {
-  font-size: 1.2rem;
+  color: #4F46E5;
+  background: #EEF2FF;
+  font-weight: 600;
 }
 </style>

@@ -121,6 +121,7 @@ app.add_middleware(
 simulation_engine: Optional[SimulationEngine] = None
 engine_lock = threading.Lock()
 is_engine_running = False
+simulation_thread: Optional[threading.Thread] = None
 current_state: Dict[str, Any] = {}
 state_lock = threading.Lock()
 
@@ -169,44 +170,40 @@ async def options_config():
 
 @app.post("/api/config")
 async def configure_simulation(config_req: ConfigRequest):
-    global simulation_engine, is_engine_running
+    global simulation_engine, is_engine_running, simulation_thread
     with engine_lock:
         if is_engine_running:
             raise HTTPException(status_code=400, detail="仿真运行中，请稍后")
-    config = ConfigParams(**config_req.model_dump())
-    simulation_engine = SimulationEngine(config)
+        # 安全地创建新引擎（旧引擎已停止）
+        config = ConfigParams(**config_req.model_dump())
+        simulation_engine = SimulationEngine(config)
     return {"success": True, "message": "配置成功"}
 
 
 @app.post("/api/start")
 async def start_simulation():
-    global simulation_engine, is_engine_running
-    if simulation_engine is None:
-        raise HTTPException(status_code=400, detail="请先配置参数")
+    global simulation_engine, is_engine_running, simulation_thread
     with engine_lock:
+        if simulation_engine is None:
+            raise HTTPException(status_code=400, detail="请先配置参数")
         if is_engine_running:
             return {"success": True, "message": "仿真已在运行"}
-    thread = threading.Thread(target=run_simulation_thread, daemon=True)
-    thread.start()
+        is_engine_running = True
+        simulation_thread = threading.Thread(target=run_simulation_thread, daemon=True)
+        simulation_thread.start()
     return {"success": True, "message": "仿真已启动"}
 
 
-# ==================== 【修复】强制停止接口 ====================
 @app.post("/api/stop")
 async def stop_simulation_api():
     global simulation_engine, is_engine_running, current_state
-    
-    # 让引擎中止循环
-    if simulation_engine is not None:
-        simulation_engine.force_stop = True
-        
-    # 清空状态，避免假死
+    with engine_lock:
+        if simulation_engine is not None:
+            simulation_engine.force_stop = True
+        is_engine_running = False
     with state_lock:
         current_state = {}
-        
-    is_engine_running = False
-    return {"success": True, "message": "已强制终止后端线程"}
-# ==========================================================
+    return {"success": True, "message": "已终止仿真"}
 
 
 @app.get("/api/state")
@@ -251,7 +248,7 @@ async def get_default_config():
     return {
         "window_count": 10, "table_count": 30, "serving_speed": 1,
         "student_count": 500, "simulation_duration": 120, "arrival_rate": 15,
-        "avg_serve_time": 1.0, "avg_eat_time": 10.0, "tick_step": 1.0
+        "avg_serve_time": 1.0, "avg_eat_time": 600, "tick_step": 1.0
     }
 
 @app.get("/api/simulation/config/recommended")
@@ -259,7 +256,7 @@ async def get_recommended_config():
     return {
         "window_count": 15, "table_count": 50, "serving_speed": 1,
         "student_count": 1000, "simulation_duration": 120, "arrival_rate": 20,
-        "avg_serve_time": 1.0, "avg_eat_time": 10.0, "tick_step": 1.0
+        "avg_serve_time": 1.0, "avg_eat_time": 600, "tick_step": 1.0
     }
 
 @app.post("/api/simulation/run")
