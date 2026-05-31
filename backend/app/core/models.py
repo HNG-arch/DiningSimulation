@@ -23,8 +23,8 @@ from pydantic import BaseModel, Field
 
 # ==================== 数据库与成本常量 ====================
 
-# 数据库文件路径，位于 backend/simulation_history.db
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "simulation_history.db")
+# 数据库文件路径，位于 backend/data/simulation_history.db
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "data", "simulation_history.db")
 DB_PATH = os.path.abspath(DB_PATH)
 
 # 每个窗口的每日运营成本（元/天），含人工、水电、设备折旧

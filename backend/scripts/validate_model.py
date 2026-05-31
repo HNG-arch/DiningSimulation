@@ -16,6 +16,8 @@ matplotlib.use('Agg')                  # 使用非交互式后端，避免 GUI �
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score
+import sys, os
+sys.path.insert(0, os.path.dirname(__file__))
 from analyze_results import train_model, calculate_cost, load_data
 
 # 配置 matplotlib 支持中文显示

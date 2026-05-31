@@ -21,8 +21,8 @@ import pytest
 from pathlib import Path
 
 # 项目常量
-ROOT_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = ROOT_DIR / "backend" / "simulation_history.db"
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+DB_PATH = ROOT_DIR / "data" / "simulation_history.db"
 API_URL = "http://127.0.0.1:8000"
 FRONT_URL = "http://127.0.0.1:5173"
 
