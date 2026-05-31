@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import CafeteriaView from '../components/CafeteriaView.vue'
-import AnalysisView from '../components/AnalysisView.vue'
-import SimulationView from '../components/SimulationView.vue'
+import CafeteriaView from '../views/CafeteriaView.vue'
+import AnalysisView from '../views/AnalysisView.vue'
+import SimulationView from '../views/SimulationView.vue'
 
 const routes = [
   {

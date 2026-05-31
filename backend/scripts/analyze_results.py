@@ -1,19 +1,20 @@
 """
-analyze_results.py --- 离线分析脚本
+analyze_results.py --- 离散事件仿真分析脚本
 基于随机森林构建预测模型，并结合运筹学进行最低成本网格搜索寻优。
 
 用途：独立于 Web API 运行的离线分析工具，适合在命令行下进行批量实验。
 与 backend/app/core/analysis.py 的关系：
   - 本文件是独立的本地脚本，定义了自己的成本常量和计算函数
-  - 后端 API 中对应的逻辑位于 backend/app/core/analysis.py 和 cost_params.py
+  - 后端 API 中对应的逻辑位于 backend/app/core/analysis.py
   - 两者功能等价但运行环境不同，本脚本不需要启动 FastAPI
 """
+import os
 import sqlite3
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 
-# 数据库文件路径，相对于脚本所在目录（analysis_data/）
-DB_PATH = "simulation_history.db"
+# 数据库文件路径，指向 backend/data/
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "simulation_history.db")
 
 # ==================== 决策核心成本参数 ====================
 

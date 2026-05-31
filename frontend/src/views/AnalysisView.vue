@@ -1,6 +1,6 @@
 <template>
   <div class="analysis-view">
-    <h1>📈 决策分析</h1>
+    <h1>决策分析</h1>
     <button class="btn-info" @click="showExplanation = true">📖 查看模型解读</button>
 
     <div class="result-selector" v-if="allResults.length > 0">
@@ -34,7 +34,7 @@
 
       <!-- 成本分析 -->
       <div class="analysis-card">
-        <h2>💰 成本分析（当前配置）</h2>
+        <h2>成本分析（当前配置）</h2>
         <div class="cost-breakdown" v-if="costData">
           <div class="cost-item window-cost">
             <span class="cost-label">🏪 窗口运营</span>
@@ -59,7 +59,7 @@
 
       <!-- ML 模型性能 -->
       <div class="analysis-card">
-        <h2>🧠 ML 模型性能</h2>
+        <h2>ML 模型性能</h2>
         <div v-if="modelMetrics" class="model-metrics">
           <div class="metric-item">
             <span class="metric-label">R² 决定系数</span>
@@ -83,7 +83,7 @@
 
       <!-- ECharts U型曲线 -->
       <div class="analysis-card full-width" v-if="modelTrained">
-        <h2>📉 成本 U型曲线 — 为什么窗口不能无限多？</h2>
+        <h2>成本 U型曲线 — 为什么窗口不能无限多？</h2>
         <div class="chart-container" v-if="uCurveData">
           <div class="curve-info">
             <span class="curve-param">座位固定: {{ uCurveData.fixed_params.seat }} | 到达率: {{ uCurveData.fixed_params.arrival_rate }} 人/分</span>
@@ -96,7 +96,7 @@
 
       <!-- ECharts 热力图 -->
       <div class="analysis-card full-width" v-if="modelTrained">
-        <h2>🗺️ 木桶效应热力图 — 窗口与座位的联动关系</h2>
+        <h2>木桶效应热力图 — 窗口与座位的联动关系</h2>
         <div class="chart-container" v-if="heatmapData">
           <div class="heatmap-info">
             <span>到达率: {{ heatmapData.fixed_params.arrival_rate }} 人/分 | 颜色越深 = 等待越久</span>
@@ -108,7 +108,7 @@
 
       <!-- 最优配置推荐 -->
       <div class="analysis-card full-width" v-if="optimumData">
-        <h2>🎯 智能推荐：最低成本配置</h2>
+        <h2>智能推荐：最低成本配置</h2>
         <div class="optimum-grid">
           <div class="optimum-section">
             <h3>推荐配置</h3>
@@ -139,20 +139,20 @@
 
       <!-- ECharts 时间趋势图 -->
       <div class="analysis-card full-width">
-        <h2>📉 等待时间 / 排队长度 趋势</h2>
+        <h2>等待时间 / 排队长度 趋势</h2>
         <div ref="trendChart" class="echarts-box" v-if="timeSeries.length > 0"></div>
         <div v-else class="no-data-inline">暂无时间序列数据</div>
       </div>
 
       <!-- ECharts 吞吐量柱状图 -->
       <div class="analysis-card full-width" v-if="currentResult.statistics?.throughput_per_window?.length">
-        <h2>🏪 各窗口吞吐量</h2>
+        <h2>各窗口吞吐量</h2>
         <div ref="throughputChart" class="echarts-box"></div>
       </div>
 
       <!-- ECharts 满意度 vs 等待时间散点图 -->
       <div class="analysis-card full-width" v-if="allResults.length > 0">
-        <h2>😊 满意度 vs 等待时间 — 历史仿真分布</h2>
+        <h2>满意度 vs 等待时间 — 历史仿真分布</h2>
         <div class="scatter-info">
           <span>共 {{ allResults.length }} 条仿真记录 · 气泡大小=吞吐量 · 红色=当前选中</span>
         </div>
@@ -236,7 +236,7 @@ const renderUCurve = () => {
   const d = uCurveData.value
   uCurveInstance.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['运营成本', '惩罚成本', '总成本'], bottom: 0 },
+    legend: { data: ['运营成本', '惩罚成本', '总成本'], bottom: 0, itemGap: 25, textStyle: { fontSize: 12 } },
     grid: { left: 50, right: 20, top: 20, bottom: 40 },
     xAxis: { type: 'category', data: d.windows, name: '窗口数' },
     yAxis: { type: 'value', name: '成本(元)' },
@@ -320,7 +320,7 @@ const renderTrend = () => {
 
   trendInstance.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['平均等待(分)', '排队总人数'], bottom: 0 },
+    legend: { data: ['平均等待(分)', '排队总人数'], bottom: 0, itemGap: 25, textStyle: { fontSize: 12 } },
     grid: { left: 50, right: 50, top: 20, bottom: 40 },
     xAxis: { type: 'category', data: times, name: '时间(分钟)', boundaryGap: false },
     yAxis: [
@@ -397,7 +397,12 @@ const renderScatter = () => {
     grid: { left: 60, right: 30, top: 30, bottom: 50 },
     xAxis: { type: 'value', name: '平均等待时间(分)', nameLocation: 'middle', nameGap: 30, splitLine: { lineStyle: { type: 'dashed' } } },
     yAxis: { type: 'value', name: '满意度(%)', min: 0, max: 100, splitLine: { lineStyle: { type: 'dashed' } } },
-    legend: { data: ['历史仿真', '当前选中'], bottom: 0 },
+    legend: {
+      data: ['历史仿真', '当前选中'],
+      bottom: 0,
+      itemGap: 30,
+      textStyle: { fontSize: 12, lineHeight: 20 }
+    },
     series: [
       {
         name: '历史仿真', type: 'scatter', data: others,
@@ -616,8 +621,11 @@ onUnmounted(() => {
 }
 
 h1 {
-  color: #1a1a1a;
-  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 16px;
+  letter-spacing: -0.3px;
 }
 
 .result-selector {
@@ -662,16 +670,16 @@ h1 {
 
 .btn-primary {
   padding: 8px 18px;
-  background: #667eea;
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 500;
   transition: all 0.2s;
 }
-.btn-primary:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+.btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(79,70,229,0.35); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .btn-secondary {
@@ -685,17 +693,18 @@ h1 {
 .btn-secondary:hover { background: #e0e0e0; }
 
 .btn-info {
-  padding: 10px 20px;
-  background: #667eea;
+  padding: 8px 18px;
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 500;
   margin-bottom: 15px;
+  transition: all 0.2s;
 }
-.btn-info:hover { opacity: 0.9; }
+.btn-info:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(79,70,229,0.35); }
 
 .no-data {
   text-align: center;
@@ -734,11 +743,14 @@ h1 {
 }
 .analysis-card.full-width { grid-column: 1 / -1; }
 .analysis-card h2 {
-  color: #2c3e50;
-  font-size: 1.15rem;
-  margin-bottom: 15px;
+  color: #0F172A;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 14px;
   padding-bottom: 10px;
-  border-bottom: 2px solid #f0f0f0;
+  padding-left: 10px;
+  border-bottom: 1px solid #F1F5F9;
+  border-left: 3px solid #4F46E5;
 }
 
 /* 图表容器 */
@@ -762,8 +774,8 @@ h1 {
 .curve-param { color: #718096; }
 .curve-best { color: #2d3748; }
 .curve-best strong { color: #e53e3e; }
-.heatmap-info { margin-bottom: 8px; font-size: 0.85rem; color: #718096; }
-.scatter-info { margin-bottom: 8px; font-size: 0.85rem; color: #718096; }
+.heatmap-info { margin-bottom: 12px; font-size: 0.85rem; color: #718096; }
+.scatter-info { margin-bottom: 16px; font-size: 0.85rem; color: #718096; padding-bottom: 8px; }
 
 /* 模型指标 */
 .model-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -834,7 +846,7 @@ h1 {
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  background: #667eea;
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
   color: white;
 }
 .modal-header h3 { margin: 0; font-size: 1.3rem; }

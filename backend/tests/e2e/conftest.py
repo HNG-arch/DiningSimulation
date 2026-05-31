@@ -2,8 +2,8 @@
 e2e 集成测试 conftest — 自动管理后端和前端进程生命周期
 
 运行方式（在项目根目录）：
-    pytest e2e_tests/ -v              # 使用 Edge 浏览器，无头模式
-    pytest e2e_tests/ -v --headed     # 显示浏览器窗口
+    pytest backend/tests/e2e/ -v              # 使用 Edge 浏览器，无头模式
+    pytest backend/tests/e2e/ -v --headed     # 显示浏览器窗口
 """
 import os
 import sys
@@ -17,7 +17,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 # ========================== 常量 ==========================
-ROOT_DIR = Path(__file__).resolve().parent.parent
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 BACKEND_DIR = ROOT_DIR / "backend"
 FRONTEND_DIR = ROOT_DIR / "frontend"
 

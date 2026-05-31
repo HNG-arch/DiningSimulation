@@ -22,8 +22,9 @@ from app.core.analysis import (
     get_u_curve_data, get_heatmap_data
 )
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "simulation_history.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "simulation_history.db")
 DB_PATH = os.path.abspath(DB_PATH)
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 
 def init_db():
@@ -170,11 +171,16 @@ async def options_config():
 
 @app.post("/api/config")
 async def configure_simulation(config_req: ConfigRequest):
-    global simulation_engine, is_engine_running, simulation_thread
+    global simulation_engine, is_engine_running, simulation_thread, current_state
     with engine_lock:
-        if is_engine_running:
-            raise HTTPException(status_code=400, detail="仿真运行中，请稍后")
-        # 安全地创建新引擎（旧引擎已停止）
+        # 如果仿真正在运行，自动停止
+        if is_engine_running and simulation_engine is not None:
+            simulation_engine.force_stop = True
+            is_engine_running = False
+        # 清空状态
+        with state_lock:
+            current_state = {}
+        # 创建新引擎
         config = ConfigParams(**config_req.model_dump())
         simulation_engine = SimulationEngine(config)
     return {"success": True, "message": "配置成功"}

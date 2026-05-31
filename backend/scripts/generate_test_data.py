@@ -17,13 +17,8 @@ import numpy as np
 import os
 
 
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# ==================== 常量定义 ====================
-
-# 数据库文件路径（与仿真系统共用）
-DB_PATH = os.path.join(BASE_DIR, "backend", "simulation_history.db")
+# 数据库文件路径，指向 backend/data/
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "simulation_history.db")
 
 # 遍历参数范围
 WINDOWS = [2, 3, 4, 5, 6, 8, 10, 12, 14, 15, 16, 18, 20, 24, 30]  # 15种窗口配置

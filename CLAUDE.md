@@ -28,9 +28,8 @@ npm run build     # Production build to frontend/dist/
 
 ### E2E tests
 ```bash
-conda activate diningSim
-pytest e2e_tests/ -v                # Headless (Edge Chromium)
-pytest e2e_tests/ -v --headed       # Show browser
+pytest backend/tests/e2e/ -v                # Headless (Edge Chromium)
+pytest backend/tests/e2e/ -v --headed       # Show browser
 ```
 
 The E2E `conftest.py` auto-manages backend + frontend process lifecycles — no need to start them manually.
@@ -51,11 +50,11 @@ The simulation runs in a **daemon thread**. State is shared via `state_lock`/`en
 
 **`app/core/random_utils.py`** — `poisson_arrivals()` and `normal_time()` wrappers using NumPy RNG.
 
-**Database** (`simulation_history.db`): Two tables — `simulation_runs` (14 cols including config params, metrics, time_series JSON) and `window_throughput` (run_id FK, window_id, served_count). DB path is computed relative to script: `os.path.join(os.path.dirname(__file__), "..", "simulation_history.db")`.
+**Database** (`backend/data/simulation_history.db`): Two tables — `simulation_runs` (14 cols including config params, metrics, time_series JSON) and `window_throughput` (run_id FK, window_id, served_count). DB path: `backend/app/main.py` computes it as `os.path.join(backend_dir, "data", "simulation_history.db")`.
 
 ### Frontend (`frontend/`)
 
-Three Vue routes: `/` (CafeteriaView), `/simulation` (SimulationView), `/analysis` (AnalysisView).
+Three Vue routes: `/` (CafeteriaView), `/simulation` (SimulationView), `/analysis` (AnalysisView) — all in `frontend/src/views/`.
 
 **Data passing between pages is via `localStorage`** (not Pinia/Vuex). SimulationView saves config → CafeteriaView reads it → AnalysisView reads `lastSimulationId`.
 
@@ -81,6 +80,6 @@ Three Vue routes: `/` (CafeteriaView), `/simulation` (SimulationView), `/analysi
 
 ## Tests
 
-`backend/tests/` is **empty** — no unit tests exist for SimulationEngine, analysis, models, or random_utils.
+`backend/tests/unit/` — for future unit tests (currently empty).
 
-All test coverage is via E2E Playwright tests in `e2e_tests/test_e2e.py` (5 scenarios: normal flow, duplicate-start rejection, DB verification, UI full flow, parameter verification).
+All current test coverage is via E2E Playwright tests in `backend/tests/e2e/test_e2e.py` (5 scenarios: normal flow, duplicate-start rejection, DB verification, UI full flow, parameter verification).

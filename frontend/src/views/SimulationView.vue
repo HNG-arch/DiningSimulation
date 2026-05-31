@@ -1,15 +1,6 @@
 
 <template>
   <div class="simulation-view">
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <h1>
-        <span class="header-icon">⚙️</span>
-        仿真参数配置
-      </h1>
-      <p class="header-subtitle">配置仿真参数，模拟食堂运行情况</p>
-    </div>
-
     <div class="simulation-container">
       <!-- 左侧配置面板 -->
       <div class="config-panel">
@@ -49,7 +40,6 @@
           <!-- 窗口数量 -->
           <div class="form-group">
             <div class="label-with-icon">
-              <span class="input-icon">🏪</span>
               <label>窗口数量</label>
             </div>
             <div class="slider-container">
@@ -69,7 +59,6 @@
           <!-- 桌子数量 -->
           <div class="form-group">
             <div class="label-with-icon">
-              <span class="input-icon">🪑</span>
               <label>桌子数量</label>
             </div>
             <div class="slider-container">
@@ -89,7 +78,6 @@
           <!-- 打饭速度 -->
           <div class="form-group">
             <div class="label-with-icon">
-              <span class="input-icon">⚡</span>
               <label>打饭速度 (分钟/人)</label>
             </div>
             <div class="slider-container">
@@ -110,7 +98,6 @@
           <!-- 学生总数 -->
           <div class="form-group">
             <div class="label-with-icon">
-              <span class="input-icon">👥</span>
               <label>学生总数</label>
             </div>
             <div class="slider-container">
@@ -130,7 +117,6 @@
           <!-- 仿真时间 -->
           <div class="form-group">
             <div class="label-with-icon">
-              <span class="input-icon">⏱️</span>
               <label>仿真时间 (分钟)</label>
             </div>
             <div class="slider-container">
@@ -150,7 +136,6 @@
           <!-- 平均就餐时间 -->
           <div class="form-group">
             <div class="label-with-icon">
-              <span class="input-icon">🍽️</span>
               <label>平均就餐时间 (分钟)</label>
             </div>
             <div class="slider-container">
@@ -171,7 +156,6 @@
           <!-- 到达率 -->
           <div class="form-group">
             <div class="label-with-icon">
-              <span class="input-icon">📈</span>
               <label>到达率 (人/分钟)</label>
             </div>
             <div class="slider-container">
@@ -191,7 +175,6 @@
           <!-- 新增：仿真速率控制 -->
           <div class="form-group highlight">
             <div class="label-with-icon">
-              <span class="input-icon">⚡</span>
               <label>仿真播放速度</label>
             </div>
             <div class="speed-control">
@@ -521,6 +504,14 @@ const runSimulation = async () => {
   running.value = true
 
   try {
+    const st = await axios.get('http://127.0.0.1:8000/api/state')
+    if (st.data?.state?.is_running) {
+      await axios.post('http://127.0.0.1:8000/api/stop')
+      await new Promise(r => setTimeout(r, 700))
+    }
+  } catch (e) {}
+
+  try {
     // 将前端配置转换为后端需要的格式（时间单位：秒）
     const avgServeTimeSeconds = config.servingSpeed * 60   // 分钟/人 → 秒
     const avgEatTimeSeconds = config.avgEatTime * 60       // 从用户配置获取，分钟 → 秒
@@ -715,45 +706,29 @@ onMounted(() => {
 
 /* 其他样式保持不变 */
 .simulation-view {
-  min-height: calc(100vh - 70px);
-  padding: 30px;
-  background: #f0f2f5;
-}
-
-.page-header {
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.page-header h1 {
-  font-size: 1.4rem;
-  color: #1a1a1a;
-  margin-bottom: 4px;
+  height: calc(100vh - 54px);
+  overflow: hidden;
+  padding: 16px 20px;
+  background: #F8FAFC;
   display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.header-icon {
-  font-size: 1.4rem;
-}
-
-.header-subtitle {
-  color: #8c8c8c;
-  font-size: 0.85rem;
+  flex-direction: column;
 }
 
 .simulation-container {
+  flex: 1;
+  min-height: 0;
   max-width: 1400px;
   margin: 0 auto;
+  width: 100%;
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
-  gap: 30px;
+  gap: 20px;
+  overflow: hidden;
 }
 
 .config-panel {
-  padding: 30px;
+  overflow-y: auto;
+  padding: 24px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -988,22 +963,31 @@ onMounted(() => {
 
 .run-btn {
   margin-top: 20px;
-  padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 14px;
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   color: white;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
   position: relative;
   overflow: hidden;
 }
+.run-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  transition: left 0.45s ease;
+}
+.run-btn:hover::before { left: 150%; }
 
 .run-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 20px 30px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 12px 28px rgba(79, 70, 229, 0.4);
 }
 
 .run-btn:disabled {
@@ -1036,10 +1020,11 @@ onMounted(() => {
 }
 
 .preview-panel {
-  padding: 30px;
+  overflow-y: auto;
+  padding: 24px;
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid #E2E8F0;
 }
 
 .preview-cards {

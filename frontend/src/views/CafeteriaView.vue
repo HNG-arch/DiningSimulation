@@ -48,12 +48,22 @@
         </div>
 
         <div class="mini-chart-card">
-          <div class="chart-title">窗口负载</div>
-          <div class="bar-chart">
-            <div class="bar-item" v-for="w in windows" :key="w.id">
-              <div class="bar-label">{{ w.id }}</div>
-              <div class="bar-track">
-                <div class="bar-fill" :style="{ height: barHeight(w.queueLength) + '%', background: queueColor(w.queueLength) }"></div>
+          <div class="chart-title-row">
+            <span class="chart-title">窗口负载</span>
+            <span class="chart-subtitle">峰 {{ Math.max(...windows.map(w => w.queueLength || 0)) }}人</span>
+          </div>
+          <div class="bar-chart-wrap">
+            <div class="bc-yaxis">
+              <span>满</span>
+              <span>½</span>
+              <span>0</span>
+            </div>
+            <div class="bar-chart">
+              <div class="bar-item" v-for="w in windows" :key="w.id">
+                <div class="bar-track">
+                  <div class="bar-fill" :style="{ height: barHeight(w.queueLength) + '%', background: queueColor(w.queueLength) }"></div>
+                </div>
+                <div class="bar-label">{{ w.id }}</div>
               </div>
             </div>
           </div>
@@ -101,85 +111,90 @@
 
       <!-- 中栏：食堂平面图 -->
       <div class="center-panel">
-        <!-- 入口区 -->
-        <div class="entry-zone">
-          <div class="zone-icon">入口</div>
-          <div class="arrival-anchor">
-            <span v-for="a in arrivingAnimations" :key="a.id" class="arrive-dot" :style="{ animationDelay: a.delay + 'ms' }"></span>
-          </div>
-          <div class="entry-stats">
-            <span>到达 {{ totalArrived }}人</span>
-            <span class="dot-sep">·</span>
-            <span>到达率 {{ config.arrivalRate }}/min</span>
-          </div>
-        </div>
-
-        <!-- 人流过道 -->
-        <div class="aisle-flow">
-          <span v-for="i in flowCount" :key="'f1-'+i" class="flow-particle"
-            :style="{ animationDelay: (i * 0.15) + 's', left: (10 + Math.random() * 80) + '%' }"></span>
-        </div>
-
-        <!-- 窗口区 -->
-        <div class="windows-zone">
-          <div class="windows-row" :style="{ '--n': Math.min(windows.length, 20) }">
-            <div v-for="w in windows" :key="w.id" class="window-card"
-              :class="{ 'is-serving': w.isServing }"
-              :style="{ '--qc': queueColor(w.queueLength), borderColor: queueColor(w.queueLength), boxShadow: w.isServing ? '0 0 0 2px '+queueColor(w.queueLength)+'30, 0 4px 18px '+queueColor(w.queueLength)+'25' : 'none' }">
-              <div class="win-header">
-                <span class="win-num">{{ w.id }}</span>
-                <span class="win-served">{{ w.totalServed }}</span>
-              </div>
-              <div class="win-queue">
-                <span v-for="i in Math.min(w.queueLength, 12)" :key="i" class="queue-dot"
-                  :style="{ background: queueColor(w.queueLength), animationDelay: i * 0.05 + 's' }"></span>
-                <span v-if="w.queueLength > 12" class="queue-more">+{{ w.queueLength - 12 }}</span>
-                <span v-if="w.queueLength === 0" class="queue-empty">空</span>
-              </div>
-              <div class="win-footer" :class="{ serving: w.isServing }">
-                {{ w.isServing ? '服务中' : '空闲' }}
-              </div>
-              <div class="win-glow" v-if="w.isServing"></div>
+        <div class="floor-body">
+          <!-- 左侧门（可进可出） -->
+          <div class="door-side">
+            <div class="door-label">门 1</div>
+            <div class="door-particles-v">
+              <span v-for="a in arrivingAnimationsLeft" :key="'la'+a.id"
+                class="flow-h enter" :style="{ animationDelay: a.delay + 'ms', top: a.top + '%' }"></span>
+              <span v-for="l in leavingAnimationsLeft" :key="'ll'+l.id"
+                class="flow-h leave" :style="{ animationDelay: l.delay + 'ms', top: l.top + '%' }"></span>
+            </div>
+            <div class="door-side-stats">
+              <span class="ds-in">↦ {{ leftArrived }}</span>
+              <span class="ds-out">↤ {{ leftCompleted }}</span>
             </div>
           </div>
-        </div>
 
-        <!-- 人流过道 -->
-        <div class="aisle-flow wide">
-          <span v-for="i in flowCount" :key="'f2-'+i" class="flow-particle down"
-            :style="{ animationDelay: (i * 0.2) + 's', left: (5 + Math.random() * 90) + '%' }"></span>
-        </div>
-
-        <!-- 座位区 -->
-        <div class="seats-zone">
-          <div class="seats-grid" :style="{ '--cols': seatCols }">
-            <div v-for="table in diningTables" :key="table.id" class="table-unit"
-              :class="{ 'has-people': table.occupiedSeats > 0 }">
-              <div class="table-top"></div>
-              <div class="table-seats">
-                <div v-for="(seat, si) in table.seats" :key="si" class="seat-dot"
-                  :class="{ occupied: seat.occupied, finishing: seat.occupied && seat.remainingTime < 30, popping: seat.justOccupied }">
-                  <span v-if="seat.occupied" class="seat-timer">{{ Math.ceil(seat.remainingTime) }}</span>
+          <!-- 主楼层 -->
+          <div class="floor-main">
+            <!-- 窗口区 -->
+            <div class="windows-zone">
+              <div class="windows-row" :style="{ '--n': Math.min(windows.length, 20) }">
+                <div v-for="w in windows" :key="w.id" class="window-card"
+                  :class="{ 'is-serving': w.isServing }"
+                  :style="{ '--qc': queueColor(w.queueLength), borderColor: queueColor(w.queueLength), boxShadow: w.isServing ? '0 0 0 2px '+queueColor(w.queueLength)+'30, 0 4px 18px '+queueColor(w.queueLength)+'25' : 'none' }">
+                  <div class="win-header">
+                    <span class="win-num">{{ w.id }}</span>
+                    <span class="win-served">{{ w.totalServed }}</span>
+                  </div>
+                  <div class="win-queue">
+                    <span v-for="i in Math.min(w.queueLength, 12)" :key="i" class="queue-dot"
+                      :style="{ background: queueColor(w.queueLength), animationDelay: i * 0.05 + 's' }"></span>
+                    <span v-if="w.queueLength > 12" class="queue-more">+{{ w.queueLength - 12 }}</span>
+                    <span v-if="w.queueLength === 0" class="queue-empty">空</span>
+                  </div>
+                  <div class="win-footer" :class="{ serving: w.isServing }">
+                    {{ w.isServing ? '服务中' : '空闲' }}
+                  </div>
+                  <div class="win-glow" v-if="w.isServing"></div>
                 </div>
               </div>
             </div>
-          </div>
-          <div v-if="waitingSeatCount > 0" class="waiting-zone">
-            <span class="waiting-icon">⏳</span>
-            <span>{{ waitingSeatCount }}人等待座位</span>
+
+            <!-- 人流过道 -->
+            <div class="aisle-flow wide">
+              <span v-for="i in flowCount" :key="'f2-'+i" class="flow-particle down"
+                :style="{ animationDelay: (i * 0.2) + 's', left: (5 + Math.random() * 90) + '%' }"></span>
+            </div>
+
+            <!-- 座位区 -->
+            <div class="seats-zone">
+              <div class="seats-grid" :style="{ '--cols': seatCols }">
+                <div v-for="table in diningTables" :key="table.id" class="table-unit"
+                  :class="{ 'has-people': table.occupiedSeats > 0 }">
+                  <div class="table-top"></div>
+                  <div class="table-seats">
+                    <div v-for="(seat, si) in table.seats" :key="si" class="seat-dot"
+                      :class="{ occupied: seat.occupied, finishing: seat.occupied && seat.remainingTime < 30, popping: seat.justOccupied }">
+                      <span v-if="seat.occupied" class="seat-timer">{{ Math.ceil(seat.remainingTime) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-if="waitingSeatCount > 0" class="waiting-zone">
+                <span>{{ waitingSeatCount }} 人等待座位</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- 出口区 -->
-        <div class="exit-zone">
-          <div class="zone-icon">出口</div>
-          <div class="exit-anchor">
-            <span v-for="l in leavingAnimations" :key="l.id" class="leave-dot" :style="{ animationDelay: l.delay + 'ms' }"></span>
+        <!-- 底部门（可进可出） -->
+        <div class="door-bottom">
+          <div class="door-label">门 2</div>
+          <div class="door-particles-h">
+            <span v-for="a in arrivingAnimationsBottom" :key="'ba'+a.id"
+              class="flow-v enter" :style="{ animationDelay: a.delay + 'ms', left: a.left + '%' }"></span>
+            <span v-for="l in leavingAnimationsBottom" :key="'bl'+l.id"
+              class="flow-v leave" :style="{ animationDelay: l.delay + 'ms', left: l.left + '%' }"></span>
           </div>
-          <div class="exit-stats-text">
-            <span>离开 {{ totalCompleted }}人</span>
-            <span class="dot-sep">·</span>
-            <span>完成率 {{ completionRate }}%</span>
+          <div class="door-bottom-stats">
+            <span class="ds-in">↑ {{ bottomArrived }} 进入</span>
+            <span class="ds-sep">·</span>
+            <span class="ds-out">{{ bottomCompleted }} 离开 ↓</span>
+            <span class="ds-sep">·</span>
+            <span class="ds-rate">{{ config.arrivalRate }}/min</span>
           </div>
         </div>
       </div>
@@ -271,8 +286,14 @@ const satisfaction = ref(0)
 const errorMessage = ref('')
 const waitingSeatCount = ref(0)
 
-const arrivingAnimations = ref([])
-const leavingAnimations = ref([])
+const arrivingAnimationsLeft   = ref([])
+const arrivingAnimationsBottom = ref([])
+const leavingAnimationsLeft    = ref([])
+const leavingAnimationsBottom  = ref([])
+const leftArrived     = ref(0)
+const leftCompleted   = ref(0)
+const bottomArrived   = ref(0)
+const bottomCompleted = ref(0)
 let animIdCounter = 0
 let pollingInterval = null
 let prevTotalArrived = 0
@@ -282,7 +303,7 @@ const waitHistory = ref([])
 const eatingHistory = ref([])
 
 const flowCount = computed(() => Math.min(Math.floor(totalArrived.value / 3), 12))
-const seatCols = computed(() => Math.min(Math.ceil(Math.sqrt(config.tableCount)), 10))
+const seatCols = computed(() => Math.ceil(Math.sqrt(config.tableCount * 1.5)))
 
 const progressPercentage = computed(() => totalTime.value ? (currentTime.value / totalTime.value) * 100 : 0)
 const totalQueueLength = computed(() => windows.value.reduce((sum, w) => sum + (w.queueLength || 0), 0))
@@ -339,15 +360,35 @@ const eatingAreaPoints = computed(() => {
 })
 
 const triggerArrivalAnim = (count) => {
-  for (let i = 0; i < Math.min(count, 5); i++) {
-    const id = animIdCounter++; arrivingAnimations.value.push({ id, delay: i * 80 })
-    setTimeout(() => { arrivingAnimations.value = arrivingAnimations.value.filter(a => a.id !== id) }, 2000)
+  for (let i = 0; i < Math.min(count, 6); i++) {
+    const id = animIdCounter++
+    if (Math.random() < 0.5) {
+      leftArrived.value++
+      const item = { id, delay: i * 80, top: 20 + Math.random() * 60 }
+      arrivingAnimationsLeft.value.push(item)
+      setTimeout(() => { arrivingAnimationsLeft.value = arrivingAnimationsLeft.value.filter(a => a.id !== id) }, 1800)
+    } else {
+      bottomArrived.value++
+      const item = { id, delay: i * 80, left: 15 + Math.random() * 70 }
+      arrivingAnimationsBottom.value.push(item)
+      setTimeout(() => { arrivingAnimationsBottom.value = arrivingAnimationsBottom.value.filter(a => a.id !== id) }, 1800)
+    }
   }
 }
 const triggerLeaveAnim = (count) => {
-  for (let i = 0; i < Math.min(count, 5); i++) {
-    const id = animIdCounter++; leavingAnimations.value.push({ id, delay: i * 80 })
-    setTimeout(() => { leavingAnimations.value = leavingAnimations.value.filter(a => a.id !== id) }, 2000)
+  for (let i = 0; i < Math.min(count, 6); i++) {
+    const id = animIdCounter++
+    if (Math.random() < 0.5) {
+      leftCompleted.value++
+      const item = { id, delay: i * 80, top: 20 + Math.random() * 60 }
+      leavingAnimationsLeft.value.push(item)
+      setTimeout(() => { leavingAnimationsLeft.value = leavingAnimationsLeft.value.filter(a => a.id !== id) }, 1800)
+    } else {
+      bottomCompleted.value++
+      const item = { id, delay: i * 80, left: 15 + Math.random() * 70 }
+      leavingAnimationsBottom.value.push(item)
+      setTimeout(() => { leavingAnimationsBottom.value = leavingAnimationsBottom.value.filter(a => a.id !== id) }, 1800)
+    }
   }
 }
 
@@ -412,7 +453,7 @@ const endCleanup = async () => {
   } catch (e) { console.error(e) }
 }
 
-const loadAndStart = () => {
+const loadAndStart = async () => {
   totalTime.value = config.simulationDuration || 60
   playbackSpeed.value = store.simulationSpeed || 5
   if (route.query.running === 'true') {
@@ -420,6 +461,14 @@ const loadAndStart = () => {
     isSimulating.value = true; isPaused.value = false; errorMessage.value = ''
     animIdCounter = 0; prevTotalArrived = 0; prevTotalCompleted = 0
     initDisplay(); startPolling()
+  } else {
+    try {
+      const r = await axios.get('http://127.0.0.1:8000/api/state')
+      if (r.data.success && r.data.state?.is_running) {
+        isSimulating.value = true; isPaused.value = false
+        initDisplay(); startPolling()
+      }
+    } catch (e) {}
   }
 }
 
@@ -439,7 +488,7 @@ onUnmounted(() => { if (pollingInterval) clearInterval(pollingInterval) })
 
 <style scoped>
 .cafeteria-view {
-  height: 100vh;
+  height: calc(100vh - 54px);
   background: #f0f2f5;
   display: flex;
   flex-direction: column;
@@ -449,8 +498,8 @@ onUnmounted(() => { if (pollingInterval) clearInterval(pollingInterval) })
 /* ========== 顶部控制栏 ========== */
 .top-bar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 20px; background: #fff; border-bottom: 1px solid #e8e8e8;
-  position: sticky; top: 60px; z-index: 100; gap: 16px;
+  padding: 10px 20px; background: #fff; border-bottom: 1px solid #e8e8e8;
+  flex-shrink: 0; gap: 16px;
 }
 .top-left { display: flex; align-items: center; gap: 12px; }
 .page-title { font-size: 1.15rem; font-weight: 700; color: #1a1a1a; margin: 0; }
@@ -472,24 +521,28 @@ onUnmounted(() => { if (pollingInterval) clearInterval(pollingInterval) })
 .ctrl-btn.danger { background: #fff1f0; border-color: #f5222d; color: #f5222d; }
 
 /* ========== 三栏主体 ========== */
-.main-area { display: flex; gap: 8px; margin-top: 8px; height: calc(100vh - 48px - 52px - 16px); }
+.main-area { display: flex; gap: 8px; padding: 8px 8px 8px 8px; flex: 1; min-height: 0; overflow: hidden; }
 
 /* ========== 左栏 ========== */
-.left-panel { width: 180px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+.left-panel { width: 180px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; padding-top: 2px; justify-content: space-around; }
 .mini-chart-card { background: #fff; border-radius: 8px; padding: 8px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
 .chart-title { font-size: 0.72rem; color: #8c8c8c; margin-bottom: 4px; }
-.mini-svg { width: 100%; height: 60px; }
+.chart-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.chart-subtitle { font-size: 0.6rem; color: #94A3B8; font-weight: 500; }
+.mini-svg { width: 100%; height: 60px; overflow: visible; }
 .chart-value { text-align: right; font-size: 1.1rem; font-weight: 700; color: #1a1a1a; margin-top: 2px; }
 .chart-value .unit { font-size: 0.65rem; font-weight: 400; color: #8c8c8c; }
 .chart-value.green { color: #52c41a; }
 .chart-value.yellow { color: #faad14; }
 .chart-value.red { color: #f5222d; }
 
-.bar-chart { display: flex; align-items: flex-end; gap: 3px; height: 60px; }
-.bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
-.bar-label { font-size: 0.55rem; color: #bfbfbf; margin-bottom: 1px; }
-.bar-track { width: 100%; height: 50px; background: #f5f5f5; border-radius: 2px 2px 0 0; }
-.bar-fill { height: 100%; border-radius: 2px 2px 0 0; transition: height 0.4s; min-height: 1px; }
+.bar-chart-wrap { display: flex; gap: 3px; }
+.bc-yaxis { display: flex; flex-direction: column; justify-content: space-between; font-size: 0.48rem; color: #94A3B8; padding-bottom: 14px; width: 12px; flex-shrink: 0; text-align: right; }
+.bar-chart { flex: 1; display: flex; align-items: flex-end; gap: 2px; height: 54px; }
+.bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
+.bar-label { font-size: 0.5rem; color: #CBD5E1; margin-top: 2px; flex-shrink: 0; }
+.bar-track { width: 100%; flex: 1; background: #F1F5F9; border-radius: 2px 2px 0 0; position: relative; overflow: hidden; }
+.bar-fill { position: absolute; bottom: 0; width: 100%; border-radius: 2px 2px 0 0; transition: height 0.4s; min-height: 1px; }
 
 .gauge-bar { padding: 2px 0; }
 .gauge-track { width: 100%; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; margin: 2px 0; }
@@ -503,7 +556,7 @@ onUnmounted(() => { if (pollingInterval) clearInterval(pollingInterval) })
 .ring-sub { font-size: 0.55rem; color: #bfbfbf; }
 
 /* ========== 中栏 ========== */
-.center-panel { flex: 1; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); padding: 8px 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; overflow: hidden; }
+.center-panel { flex: 1; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); padding: 8px 12px; display: flex; flex-direction: column; align-items: stretch; gap: 3px; overflow: hidden; }
 
 .entry-zone {
   text-align: center; padding: 6px 12px;
@@ -530,14 +583,14 @@ onUnmounted(() => { if (pollingInterval) clearInterval(pollingInterval) })
 @keyframes popDot { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-30px) scale(0); } }
 
 /* 过道人流 */
-.aisle-flow { width: 100%; max-width: 700px; height: 14px; position: relative; overflow: hidden; background: linear-gradient(90deg, transparent, #fafafa, transparent); border-radius: 3px; }
-.aisle-flow.wide { height: 18px; }
+.aisle-flow { width: 100%; height: 14px; position: relative; overflow: hidden; background: linear-gradient(90deg, transparent, #fafafa, transparent); border-radius: 3px; flex-shrink: 0; }
+.aisle-flow.wide { height: 14px; }
 .flow-particle { position: absolute; top: 50%; width: 4px; height: 4px; border-radius: 50%; background: #1890ff; opacity: 0.5; animation: fpFlow 2s linear infinite; }
 .flow-particle.down { animation-name: fpFlow; background: #667eea; }
 @keyframes fpFlow { 0% { transform: translateY(-200%); opacity: 0; } 30% { opacity: 0.6; } 70% { opacity: 0.6; } 100% { transform: translateY(400%); opacity: 0; } }
 
 /* 窗口区 */
-.windows-zone { width: 100%; max-width: 700px; overflow-x: auto; padding: 2px 0; }
+.windows-zone { width: 100%; overflow-x: auto; padding: 2px 0; flex-shrink: 0; }
 .windows-row { display: flex; gap: 4px; justify-content: center; }
 .window-card { width: calc((100% - 4px * (var(--n) - 1)) / var(--n)); min-width: 46px; max-width: 100px; background: #fff; border: 2px solid #e8e8e8; border-radius: 8px; padding: 4px; text-align: center; transition: border-color 0.3s, box-shadow 0.3s; position: relative; overflow: hidden; }
 .win-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
@@ -566,37 +619,38 @@ onUnmounted(() => { if (pollingInterval) clearInterval(pollingInterval) })
 }
 
 /* 座位区 */
-.seats-zone { flex: 1; width: 100%; max-width: 700px; background: #f5f5f7; border-radius: 8px; padding: 8px; position: relative; overflow-y: auto; min-height: 0; }
-.seats-grid { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-content: flex-start; }
+.seats-zone { flex: 1; min-height: 0; width: 100%; background: #F8FAFC; border-radius: 8px; padding: 6px; position: relative; overflow: hidden; }
+.seats-grid { display: grid; grid-template-columns: repeat(var(--cols), 1fr); grid-auto-rows: 1fr; gap: 3px; width: 100%; height: 100%; }
 .table-unit {
-  width: calc((100% - 6px * (var(--cols) - 1)) / var(--cols));
-  min-width: 38px; max-width: 64px;
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 0; min-height: 0; overflow: hidden;
   background: #fff;
-  border: 1px solid #e8e2d8;
-  border-radius: 10px;
-  padding: 5px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  border: 1px solid #E8ECF2;
+  border-radius: 6px;
+  padding: 2px;
+  transition: border-color 0.3s;
 }
 .table-unit.has-people {
-  border-color: #91caff;
-  box-shadow: 0 2px 8px rgba(24,144,255,0.12);
+  border-color: #BAE0FF;
 }
 .table-top {
-  width: 65%; height: 5px;
-  background: linear-gradient(90deg, #e0d8cc, #ccc5ba, #e0d8cc);
-  border-radius: 3px;
+  width: 60%; height: 3px;
+  background: #E2E8F0;
+  border-radius: 2px;
+  margin-bottom: 1px;
+  flex-shrink: 0;
 }
 .table-unit.has-people .table-top {
-  background: linear-gradient(90deg, #91caff, #69b1ff, #91caff);
+  background: #93C5FD;
 }
-.table-seats { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; width: 100%; }
+.table-seats { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; width: 100%; flex: 1; min-height: 0; place-items: center; }
 .seat-dot {
-  width: 100%; aspect-ratio: 1;
-  border-radius: 40%;
-  background: #f2ede5;
-  border: 1.5px solid #e0d8cc;
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 30px;
+  border-radius: 50%;
+  background: #F1F5F9;
+  border: 1.5px solid #E2E8F0;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
 }
@@ -616,18 +670,20 @@ onUnmounted(() => { if (pollingInterval) clearInterval(pollingInterval) })
 }
 .seat-dot.popping { animation: seatPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
 @keyframes seatPop { 0% { transform: scale(0); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
-.seat-timer { font-size: 0.45rem; color: #fff; font-weight: 700; line-height: 1; }
+.seat-timer { font-size: 0.52rem; color: #fff; font-weight: 700; line-height: 1; }
 .waiting-zone { margin-top: 6px; text-align: center; font-size: 0.7rem; color: #fa8c16; background: #fff7e6; border-radius: 6px; padding: 3px 10px; display: inline-block; position: absolute; bottom: 6px; right: 8px; }
 .waiting-icon { margin-right: 3px; }
 
 /* ========== 右栏 ========== */
-.right-panel { width: 160px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+.right-panel { width: 160px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
 .stat-card {
+  flex: 1;
   display: flex; align-items: center; gap: 8px;
   background: #fff; border-radius: 8px; padding: 8px 10px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   border-left: 3px solid transparent;
   transition: border-color 0.2s;
+  min-height: 0;
 }
 .stat-card.highlight { background: #f9f7ff; border-left-color: #667eea; }
 .stat-icon { font-size: 1rem; width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -643,4 +699,57 @@ onUnmounted(() => { if (pollingInterval) clearInterval(pollingInterval) })
 
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 10px 24px; background: #1a1a1a; color: #fff; border-radius: 8px; font-size: 0.85rem; z-index: 1000; }
 .empty-hint { text-align: center; padding: 60px 20px; color: #bfbfbf; font-size: 0.95rem; }
+
+/* ========== 双门布局 ========== */
+.floor-body { display: flex; flex: 1; min-height: 0; }
+.floor-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 6px 8px; gap: 4px; }
+
+.door-side {
+  width: 54px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #EEF2FF 0%, #F0FDF4 100%);
+  border-right: 2px dashed #C7D2FE;
+  border-radius: 8px 0 0 8px;
+  position: relative; overflow: hidden; gap: 8px; padding: 10px 0;
+}
+.door-label {
+  font-size: 0.65rem; font-weight: 700; color: #6366F1; letter-spacing: 1px;
+  background: #fff; border: 1.5px solid #C7D2FE; border-radius: 5px;
+  padding: 4px 5px; box-shadow: 0 1px 4px rgba(99,102,241,0.12);
+}
+.door-side .door-label { writing-mode: vertical-rl; padding: 6px 4px; }
+.door-particles-v { position: absolute; inset: 0; pointer-events: none; }
+.door-side-stats {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  font-size: 0.58rem; font-weight: 600;
+}
+.door-side-stats .ds-in { color: #3B82F6; }
+.door-side-stats .ds-out { color: #10B981; }
+
+.door-bottom {
+  height: 42px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: linear-gradient(90deg, #EEF2FF 0%, #F0FDF4 50%, #EEF2FF 100%);
+  border-top: 2px dashed #C7D2FE;
+  border-radius: 0 0 8px 8px;
+  position: relative; overflow: hidden;
+}
+.door-particles-h { position: absolute; inset: 0; pointer-events: none; }
+.door-bottom-stats { display: flex; align-items: center; gap: 8px; font-size: 0.65rem; font-weight: 500; position: relative; z-index: 1; }
+.ds-in   { color: #3B82F6; }
+.ds-out  { color: #10B981; }
+.ds-sep  { color: #CBD5E1; }
+.ds-rate { color: #94A3B8; }
+
+.flow-h { position: absolute; width: 9px; height: 9px; border-radius: 50%; }
+.flow-h.enter { background: #3B82F6; box-shadow: 0 0 8px 2px rgba(59,130,246,0.5); animation: flowRight 1.6s ease-in-out forwards; }
+.flow-h.leave { background: #10B981; box-shadow: 0 0 8px 2px rgba(16,185,129,0.5); animation: flowLeft 1.6s ease-in-out forwards; }
+@keyframes flowRight { 0% { left: -12px; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 0.8; } 100% { left: calc(100% + 12px); opacity: 0; } }
+@keyframes flowLeft  { 0% { left: calc(100% + 12px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 0.8; } 100% { left: -12px; opacity: 0; } }
+
+.flow-v { position: absolute; width: 9px; height: 9px; border-radius: 50%; }
+.flow-v.enter { background: #3B82F6; box-shadow: 0 0 8px 2px rgba(59,130,246,0.5); animation: flowUp 1.6s ease-in-out forwards; }
+.flow-v.leave { background: #10B981; box-shadow: 0 0 8px 2px rgba(16,185,129,0.5); animation: flowDown 1.6s ease-in-out forwards; }
+@keyframes flowUp   { 0% { top: calc(100% + 12px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 0.8; } 100% { top: -12px; opacity: 0; } }
+@keyframes flowDown { 0% { top: -12px; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 0.8; } 100% { top: calc(100% + 12px); opacity: 0; } }
 </style>
